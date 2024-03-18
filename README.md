@@ -4,6 +4,12 @@
 
 Most of these scripts utilize a combination of [Tautulli](https://github.com/Tautulli/Tautulli), [python-plexapi](https://github.com/pkkid/python-plexapi), and [requests](http://docs.python-requests.org/en/master/user/install/#install).
 
+
+
+
+## Notice:
+These scripts have not been tested using Tautulli. Please use the tautulli-branch.
+=======
 For use of config.ini for common variables please use [plexapi.CONFIG](http://python-plexapi.readthedocs.io/en/latest/configuration.html)
 
 Default location `~/.config/plexapi/config.ini`
@@ -42,6 +48,7 @@ print(plexapi.CONFIG_PATH)
     MCw3r6rC8jNCcUvSMSu9EqQyyvEDp8EpEf 
    </details>
 </details>
+
 
 ## Scripts List
 [![Gist](https://img.shields.io/badge/gist-Blacktwin-green.svg)](https://gist.github.com/blacktwin)   
