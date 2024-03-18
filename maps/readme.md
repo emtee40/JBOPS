@@ -1,4 +1,3 @@
-
 # Maps
 
 Maps are created with either Matplotlib/Basemap or as a geojson file on an anonymous gist.
@@ -46,16 +45,14 @@ Choose which map type you'd like by using the `-l` argument:
 
 - [x] Add check for user count in user_table to allow for greater than 25 users - [Pull](https://github.com/blacktwin/JBOPS/pull/3)
 - [x] If platform is missing from PLATFORM_COLORS use DEFAULT_COLOR - [Pull](https://github.com/blacktwin/JBOPS/pull/4)
-- [x] Add arg to allow for runs in headless (mpl.use("Agg")) 
+- [x] Add arg to allow for runs in headless (mpl.use("Agg"))
 - [x] Add pass on N/A values for Lon/Lat - [Pull](https://github.com/blacktwin/JBOPS/pull/2)
 
 ### Feature updates:
 
-- [ ] Add arg for legend (best, none, axes)
+- [ ] Add arg for legend (best, none, axes, top_left, top_center, etc.)
+- [ ] UI, toggles, interactive mode
+- [ ] Add arg to group legend items by city and/or region
 - [ ] Find server's external IP, geolocation. Allow custom location to override
 - [ ] Add arg for tracert visualization from server to client
 - [ ] Animate tracert visualization? gif?
-- [ ] UI, toggles, interactive mode
-
-
-

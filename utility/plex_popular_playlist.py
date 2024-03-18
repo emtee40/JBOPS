@@ -1,5 +1,7 @@
-'''
-Build playlist from popular tracks.
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Build playlist from popular tracks.
 
 optional arguments:
   -h, --help           show this help message and exit
@@ -13,17 +15,21 @@ optional arguments:
 
 * LIBRARY_EXCLUDE are excluded from libraries choice.
 
-'''
+"""
+from __future__ import print_function
+from __future__ import unicode_literals
 
 
 import requests
-from plexapi.server import PlexServer
+from plexapi.server import PlexServer, CONFIG
 import argparse
 import random
 
 # Edit
-PLEX_URL = 'http://localhost:32400'
-PLEX_TOKEN = 'xxxxxx'
+PLEX_URL = ''
+PLEX_TOKEN = ''
+PLEX_URL = CONFIG.data['auth'].get('server_baseurl', PLEX_URL)
+PLEX_TOKEN = CONFIG.data['auth'].get('server_token', PLEX_TOKEN)
 
 LIBRARY_EXCLUDE = ['Audio Books', 'Podcasts', 'Soundtracks']
 DEFAULT_NAME = 'Popular Music Playlist'
@@ -31,7 +37,17 @@ DEFAULT_NAME = 'Popular Music Playlist'
 # /Edit
 
 sess = requests.Session()
-sess.verify = False
+# Ignore verifying the SSL certificate
+sess.verify = False  # '/path/to/certfile'
+# If verify is set to a path to a directory,
+# the directory must have been processed using the c_rehash utility supplied
+# with OpenSSL.
+if sess.verify is False:
+    # Disable the warning that the request is insecure, we know that...
+    import urllib3
+
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 plex = PlexServer(PLEX_URL, PLEX_TOKEN, session=sess)
 
 music_sections = [x.title for x in plex.library.sections() if x.type == 'artist' and x.title not in LIBRARY_EXCLUDE]
@@ -46,8 +62,8 @@ def fetch(path):
 
     header = {'Accept': 'application/json'}
     params = {'X-Plex-Token': PLEX_TOKEN,
-               'includePopularLeaves': '1'
-               }
+              'includePopularLeaves': '1'
+              }
 
     r = requests.get(url + path, headers=header, params=params, verify=False)
     return r.json()['MediaContainer']['Metadata'][0]['PopularLeaves']['Metadata']
@@ -84,7 +100,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--tracks', nargs='?', default=False, type=int, metavar='',
                         help='Specify the track length you would like the playlist.')
-    parser.add_argument('--random',nargs='?', default=False, type=int, metavar='',
+    parser.add_argument('--random', nargs='?', default=False, type=int, metavar='',
                         help='Randomly select N artists.')
 
     opts = parser.parse_args()
@@ -115,7 +131,7 @@ if __name__ == "__main__":
 
     if opts.tracks and opts.random:
         playlist = random.sample((playlist), opts.tracks)
-        
+
     elif opts.tracks and not opts.random:
         playlist = playlist[:opts.tracks]
 

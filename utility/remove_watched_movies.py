@@ -1,21 +1,27 @@
-"""
-Find Movies that have been watched by a list of users. 
-If all users have watched movie than delete.
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Find and delete Movies that have been watched by a list of users.
 
 Deletion is prompted
 """
+from __future__ import print_function
+from __future__ import unicode_literals
 
+from builtins import input
+from builtins import object
 import requests
 import sys
 import os
 import shutil
 
 
-## EDIT THESE SETTINGS ##
-PLEXPY_APIKEY = 'xxxxxxxx'  # Your PlexPy API key
-PLEXPY_URL = 'http://localhost:8181/'  # Your PlexPy URL
-LIBRARY_NAMES = ['My Movies'] # Whatever your movie libraries are called.
-USER_LST = ['Joe', 'Alex'] # Name of users
+# ## EDIT THESE SETTINGS ##
+TAUTULLI_APIKEY = 'xxxxxxxx'  # Your Tautulli API key
+TAUTULLI_URL = 'http://localhost:8181/'  # Your Tautulli URL
+LIBRARY_NAMES = ['My Movies']  # Whatever your movie libraries are called.
+USER_LST = ['Joe', 'Alex']  # Name of users
+
 
 class UserHIS(object):
     def __init__(self, data=None):
@@ -27,32 +33,34 @@ class METAINFO(object):
     def __init__(self, data=None):
         d = data or {}
         self.title = d['title']
-        self.file = d['file']
+        media_info = d['media_info'][0]
+        parts = media_info['parts'][0]
+        self.file = parts['file']
 
 
-def get_get_metadata(rating_key):
+def get_metadata(rating_key):
     # Get the metadata for a media item.
-    payload = {'apikey': PLEXPY_APIKEY,
+    payload = {'apikey': TAUTULLI_APIKEY,
                'rating_key': rating_key,
                'cmd': 'get_metadata',
                'media_info': True}
 
     try:
-        r = requests.get(PLEXPY_URL.rstrip('/') + '/api/v2', params=payload)
+        r = requests.get(TAUTULLI_URL.rstrip('/') + '/api/v2', params=payload)
         response = r.json()
 
-        res_data = response['response']['data']['metadata']
+        res_data = response['response']['data']
         if res_data['library_name'] in LIBRARY_NAMES:
             return METAINFO(data=res_data)
 
     except Exception as e:
-        sys.stderr.write("PlexPy API 'get_get_metadata' request failed: {0}.".format(e))
+        sys.stderr.write("Tautulli API 'get_metadata' request failed: {0}.".format(e))
         pass
 
 
-def get_get_history(user, start, length):
-    # Get the PlexPy history.
-    payload = {'apikey': PLEXPY_APIKEY,
+def get_history(user, start, length):
+    # Get the Tautulli history.
+    payload = {'apikey': TAUTULLI_APIKEY,
                'cmd': 'get_history',
                'user': user,
                'media_type': 'movie',
@@ -60,24 +68,25 @@ def get_get_history(user, start, length):
                'length': length}
 
     try:
-        r = requests.get(PLEXPY_URL.rstrip('/') + '/api/v2', params=payload)
+        r = requests.get(TAUTULLI_URL.rstrip('/') + '/api/v2', params=payload)
         response = r.json()
 
         res_data = response['response']['data']['data']
         return [UserHIS(data=d) for d in res_data if d['watched_status'] == 1]
 
     except Exception as e:
-        sys.stderr.write("PlexPy API 'get_history' request failed: {0}.".format(e))
+        sys.stderr.write("Tautulli API 'get_history' request failed: {0}.".format(e))
 
 
 def delete_files(tmp_lst):
-    del_file = raw_input('Delete all watched files? (yes/no)').lower()
+    del_file = input('Delete all watched files? (yes/no)').lower()
     if del_file.startswith('y'):
         for x in tmp_lst:
             print("Removing {}".format(os.path.dirname(x)))
             shutil.rmtree(os.path.dirname(x))
     else:
         print('Ok. doing nothing.')
+
 
 movie_dict = {}
 movie_lst = []
@@ -88,13 +97,13 @@ for user in USER_LST:
     start = 0
     while True:
         # Getting all watched history for listed users
-        history = get_get_history(user, start, count)
+        history = get_history(user, start, count)
         try:
             if all([history]):
                 start += count
                 for h in history:
                     # Getting metadata of what was watched
-                    movies = get_get_metadata(h.rating_key)
+                    movies = get_metadata(h.rating_key)
                     if not any(d['title'] == movies.title for d in movie_lst):
                         movie_dict = {
                             'title': movies.title,
@@ -116,9 +125,8 @@ for user in USER_LST:
             pass
 
 for movie_dict in movie_lst:
-    for key, value in movie_dict.items():
-        if value == USER_LST:
-            print(u"{} has been watched by {}".format(movie_dict['title']," & ".join(USER_LST)))
-            delete_lst.append(movie_dict['file'])
+    if set(USER_LST) == set(movie_dict['watched_by']):
+        print(u"{} has been watched by {}".format(movie_dict['title'], " & ".join(USER_LST)))
+        delete_lst.append(movie_dict['file'])
 
 delete_files(delete_lst)

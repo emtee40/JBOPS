@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """
 Change show deletion settings by library.
 
@@ -21,34 +24,47 @@ python plex_api_show_settings.py --libraries "TV Shows" --watched 7
 python plex_api_show_settings.py --libraries "TV Shows" --unwatched -7
    - Keep Episodesfrom the past 7 days
 """
+from __future__ import print_function
+from __future__ import unicode_literals
 import argparse
 import requests
-from plexapi.server import PlexServer
+from plexapi.server import PlexServer, CONFIG
 
-
-PLEX_URL = 'http://localhost:32400'
-PLEX_TOKEN = 'xxxxx'
+PLEX_URL = ''
+PLEX_TOKEN = ''
+PLEX_URL = CONFIG.data['auth'].get('server_baseurl', PLEX_URL)
+PLEX_TOKEN = CONFIG.data['auth'].get('server_token', PLEX_TOKEN)
 
 # Allowed days/episodes to keep or delete
 WATCHED_LST = [0, 1, 7]
-UNWATCHED_LST = [0, 5, 3, 1, -3, -7,-30]
+UNWATCHED_LST = [0, 5, 3, 1, -3, -7, -30]
 
 sess = requests.Session()
-sess.verify = False
+# Ignore verifying the SSL certificate
+sess.verify = False  # '/path/to/certfile'
+# If verify is set to a path to a directory,
+# the directory must have been processed using the c_rehash utility supplied
+# with OpenSSL.
+if sess.verify is False:
+    # Disable the warning that the request is insecure, we know that...
+    import urllib3
+
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 plex = PlexServer(PLEX_URL, PLEX_TOKEN, session=sess)
 
 sections_lst = [x.title for x in plex.library.sections() if x.type == 'show']
 
 
-def set(rating_key, action, number):
+def set_show(rating_key, action, number):
 
     path = '{}/prefs'.format(rating_key)
     try:
         params = {'X-Plex-Token': PLEX_TOKEN,
-                   action: number
-                   }
+                  action: number
+                  }
 
-        r = requests.put(PLEX_URL + path,  params=params, verify=False)
+        r = requests.put(PLEX_URL + path, params=params, verify=False)
         print(r.url)
     except Exception as e:
         print('Error: {}'.format(e))
@@ -82,4 +98,4 @@ if __name__ == '__main__':
         shows = plex.library.section(libary).all()
 
         for show in shows:
-            set(show.key, setting, number)
+            set_show(show.key, setting, number)

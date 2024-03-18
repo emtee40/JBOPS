@@ -1,4 +1,7 @@
-'''
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
 Set as cron or task for times of allowing and not allowing user access to server.
 Unsharing will kill any current stream from user before unsharing.
 
@@ -32,22 +35,39 @@ Usage:
        - Unshared all libraries with USER.
        - USER is still exists as a Friend or Home User
 
-'''
+"""
+from __future__ import print_function
+from __future__ import unicode_literals
 
 
 import argparse
+import requests
 from time import sleep
-from plexapi.server import PlexServer
+from plexapi.server import PlexServer, CONFIG
 
+MESSAGE = "GET TO BED!"
 
-PLEX_URL = 'http://localhost:32400'
-PLEX_TOKEN = 'xxxxxx'
-plex = PlexServer(PLEX_URL, PLEX_TOKEN)
+PLEX_URL = ''
+PLEX_TOKEN = ''
+PLEX_URL = CONFIG.data['auth'].get('server_baseurl', PLEX_URL)
+PLEX_TOKEN = CONFIG.data['auth'].get('server_token', PLEX_TOKEN)
+
+sess = requests.Session()
+# Ignore verifying the SSL certificate
+sess.verify = False  # '/path/to/certfile'
+# If verify is set to a path to a directory,
+# the directory must have been processed using the c_rehash utility supplied
+# with OpenSSL.
+if sess.verify is False:
+    # Disable the warning that the request is insecure, we know that...
+    import urllib3
+
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+plex = PlexServer(PLEX_URL, PLEX_TOKEN, session=sess)
 
 user_lst = [x.title for x in plex.myPlexAccount().users()]
 sections_lst = [x.title for x in plex.library.sections()]
-
-MESSAGE = "GET TO BED!"
 
 
 def share(user, libraries):
@@ -60,7 +80,7 @@ def unshare(user, libraries):
     print('Unshared all libraries from {user}.'.format(libraries=libraries, user=user))
 
 
-def kill_session(user, libraries):
+def kill_session(user):
     for session in plex.sessions():
         # Check for users stream
         if session.usernames[0] in user:
@@ -91,7 +111,7 @@ if __name__ == "__main__":
     elif opts.share == 'share_all':
         share(opts.user, sections_lst)
     elif opts.share == 'unshare':
-        kill_session(opts.user, sections_lst)
+        kill_session(opts.user)
         sleep(5)
         unshare(opts.user, sections_lst)
     else:
